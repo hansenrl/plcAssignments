@@ -19,7 +19,7 @@
 
 (define eval-one-exp
   (lambda (exp)
-    (let* ([parse-tree (parse-expression exp)]
+    (let* ([parse-tree (expand-syntax (parse-expression exp))]
 	   [initial-environment global-env]
 	   [result (eval-expression parse-tree initial-environment)])
       result)))
@@ -58,7 +58,76 @@
 		    (cons 'set!
 			  (unparse-definition body))]
 	   [begin-exp (body)
-		      (eval-begin-list body env)])))
+		      (eval-begin-list body env)]
+	   [else (eopl:error 'eval-expression
+			     "incorrect expression type ~s" exp)])))
+
+(define expand-syntax
+  (lambda (expr)
+    (cases expression expr
+	   [let-exp (defs body)
+		    (app-exp (lambda-exp (map car defs)  (map expand-syntax body))
+			     (map expand-syntax (map cadr defs)))]
+	   [ifelse-exp (conditional if-true if-false)
+		   (if-exp (expand-syntax conditional)
+			   (expand-syntax if-true)
+			   (expand-syntax if-false))]
+	   [if-exp (conditional if-true)
+		   (if-exp (expand-syntax conditional)
+			   (expand-syntax if-true))]
+	   [app-exp (operator operand)
+		    (app-exp (expand-syntax operator) (map expand-syntax operand))]
+	   [lambda-exp (ids bodies)
+		       (lambda-exp ids (map expand-syntax bodies))]
+	   [cond-exp (conditions bodies)
+		     (if (equal? (car conditions) '(var-exp else))
+			 (expand-syntax (car bodies))
+			 (if (null? (cdr conditions))
+			     (if-exp (expand-syntax (car conditions) )
+				     (expand-syntax (car bodies)))
+			     (ifelse-exp (expand-syntax (car conditions) )
+					 (expand-syntax (car bodies))
+					 (expand-syntax (cond-exp (cdr conditions) (cdr bodies))))))]
+	   [and-exp (exps)
+		    (if (null? exps)
+			(lit-exp #t)
+			(if (null? (cdr exps))
+			    (expand-syntax (car exps))
+			    (ifelse-exp (expand-syntax (car exps))
+					(expand-syntax (and-exp (cdr exps)))
+					(lit-exp #f))))]
+	   [or-exp (exps)
+		   (if (null? exps)
+			(lit-exp #f)
+			(if (null? (cdr exps))
+			    (expand-syntax (car exps))
+			    (ifelse-exp (expand-syntax (car exps))
+					(lit-exp #t)
+					(expand-syntax (or-exp (cdr exps))))))]
+	   [let*-exp (defs body)
+		     (if (null? defs)
+			 (expand-syntax (let-exp '() body))
+			 (expand-syntax (let-exp (list (car defs))
+						 (list (let*-exp (cdr defs)
+								 body)))))]
+	   [case-exp (key conditions bodies)
+		     (if (equal? (car conditions) '((var-exp else)))
+			 (expand-syntax (car bodies))
+			 (if (null? (cdr conditions))
+			     (expand-syntax (if-exp (or-exp (map (lambda (exp)
+								   (app-exp (var-exp 'eqv?)
+									    (list key
+										  exp)))
+								 (car conditions)))
+						    (car bodies)))
+			     (expand-syntax (ifelse-exp (or-exp (map (lambda (exp)
+								       (app-exp (var-exp 'eqv?)
+										(list key
+										      exp)))
+								     (car conditions)))
+							(car bodies)
+							(case-exp key (cdr conditions) (cdr bodies))))))]
+	   [else expr])))
 
 (define eval-expression-list
   (lambda (explist env)
@@ -119,7 +188,7 @@
       list? pair? procedure? vector->list vector make-vector
       vector-ref vector? number? symbol? set-car! set-cdr!
       vector-set! caar cadr cdar cddr caaar caadr cadar
-      caddr cdaar cdadr cddar cdddr))
+      caddr cdaar cdadr cddar cdddr eqv?))
 
 (define global-env
   (extend-env *prim-proc-names*

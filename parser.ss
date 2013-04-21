@@ -34,19 +34,30 @@
    (defs definition-list?)
    (body expression-list?))
   (let-exp
-   (defs definition-list?)
-   (body expression-list?))
+   (defs (list-of definition?))
+   (body (list-of expression?)))
   (namedlet*-exp
    (id symbol?)
    (defs definition-list?)
    (body expression-list?))
   (let*-exp
-   (defs definition-list?)
-   (body expression-list?))
+   (defs (list-of definition?))
+   (body (list-of expression?)))
   (set-exp
    (body definition?))
   (begin-exp
    (body (list-of expression?)))
+  (cond-exp
+   (conditions (list-of expression?))
+   (bodies (list-of expression?)))
+  (and-exp
+   (exps (list-of expression?)))
+  (or-exp
+   (exps (list-of expression?)))
+  (case-exp
+   (key expression?)
+   (conditions (list-of (list-of expression?)))
+   (bodies (list-of expression?)))
 )
 
 (define lambda-parameter-list?
@@ -56,29 +67,13 @@
 	(and (symbol? (car ls))
 	     (lambda-parameter-list? (cdr ls))))))
 
-(define-datatype symbol-list symbol-list?
-  (null-symblist
-   (symb null?))
-  (base-symblist
-   (symb symbol?))
-  (mult-symblist
-   (symb symbol?)
-   (symblist symbol-list?))
-)
+(define definition?
+  (lambda (def)
+    (and (list? def)
+	 (= (length def) 2)
+	 (symbol? (car def))
+	 (expression? (cadr def)))))
 
-(define-datatype definition definition?
-  (def
-   (id symbol?)
-   (exp expression?))
-)
-
-(define-datatype definition-list definition-list?
-  (null-deflist
-   (def null?))
-  (mult-deflist
-   (def definition?)
-   (deflist definition-list?))
-)
 
 (define parse-expression
   (lambda (datum)
@@ -122,6 +117,21 @@
 		  (lit-exp (cadr datum))]
 		 [(eq? (car datum) 'begin)
 		  (begin-exp (parse-explist (cdr datum)))]
+		 [(eq? (car datum) 'cond)
+		  (cond-exp (map parse-expression (map car (cdr datum)))
+			    (map parse-expression (map cadr (cdr datum))))]
+		 [(eq? (car datum) 'and)
+		  (and-exp (map parse-expression (cdr datum)))]
+		 [(eq? (car datum) 'or )
+		  (or-exp (map parse-expression (cdr datum)))]
+		 [(eq? (car datum) 'case)
+		  (case-exp (parse-expression (cadr datum))
+			    (map (lambda (x) 
+				   (if (pair? x)
+				       (map parse-expression x)
+				       (list (parse-expression x))))
+				 (map car (cddr datum)))
+			    (map parse-expression (map cadr (cddr datum))))]
 		 [else (app-exp (parse-expression (car datum))
 				(if (list? (cdr datum))
 				    (parse-explist (cdr datum))
@@ -133,11 +143,10 @@
 
 (define parse-definition-list
   (lambda (datum)
-    (cond [(null? datum)
-	   (null-deflist datum)]
+    (cond [(null? datum) '()]
 	  [(pair? datum)
-	   (mult-deflist (parse-definition (car datum))
-			 (parse-definition-list (cdr datum)))]
+	   (cons (parse-definition (car datum))
+		 (parse-definition-list (cdr datum)))]
 	  [else
 	   (eopl:error 'parse-expression
 		       "Definition list: invalid definition: ~s" datum)])))
@@ -147,8 +156,8 @@
     (cond [(and (list? datum)
 		(= (length datum) 2)
 		(symbol? (car datum)))
-	   (def (car datum)
-		(parse-expression (cadr datum)))]
+	   (list (car datum)
+		 (parse-expression (cadr datum)))]
 	  [else
 	   (eopl:error 'parse-expression
 		       "Definition: invalid definition: ~s" datum)])))
@@ -164,22 +173,6 @@
 	   (eopl:error 'parse-expression
 		       "lambda parameter: must be symbol: ~s" datum)])))
 
-(define parse-symbol-list
-  (lambda (datum)
-    (cond [(null? datum)
-	   (null-symblist datum)]
-	  [(atom? datum)
-	   (if (symbol? datum)
-	       (base-symblist datum)
-	       (eopl:error 'parse-expression
-			    "lambda parameter: must be symbol: ~s" datum))]
-	  [else
-	   (if (symbol? (car datum))
-	       (mult-symblist (car datum)
-			      (parse-symbol-list (cdr datum)))
-	       (eopl:error 'parse-expression
-			    "lambda parameter: must be symbol: ~s" datum))])))
-
 (define parse-namedlet
   (lambda (typeofexp datum)
     (typeofexp (cadr datum)
@@ -187,7 +180,7 @@
 	       (if (null? (cdddr datum))
 		   (eopl:error 'parse-expression
 			       "named let expression: empty body: ~s" datum)
-		   (parse-listofexpressions (cddr datum))))))
+		   (parse-explistlistofexpressions (cddr datum))))))
 
 (define parse-let 
   (lambda (typeofexp datum)
@@ -195,7 +188,7 @@
 	       (if (null? (cddr datum))
 		   (eopl:error 'parse-expression
 			       "let expression: empty body: ~s" datum)
-		   (parse-listofexpressions (cddr datum))))))
+		   (parse-explist (cddr datum))))))
 
 (define parse-explist
   (lambda (datum)
