@@ -69,7 +69,7 @@
 		    (app-exp (lambda-exp (map car defs)  (map expand-syntax body))
 			     (map expand-syntax (map cadr defs)))]
 	   [ifelse-exp (conditional if-true if-false)
-		   (if-exp (expand-syntax conditional)
+		   (ifelse-exp (expand-syntax conditional)
 			   (expand-syntax if-true)
 			   (expand-syntax if-false))]
 	   [if-exp (conditional if-true)
