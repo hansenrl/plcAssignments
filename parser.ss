@@ -55,6 +55,9 @@
    (exps (list-of expression?)))
   (or-exp
    (exps (list-of expression?)))
+  (while-exp
+   (test-exp expression?)
+   (bodies (list-of expression?)))
   (case-exp
    (key expression?)
    (conditions (list-of (list-of expression?)))
@@ -123,6 +126,8 @@
 			    (map parse-expression (map cadr (cdr datum))))]
 		 [(eq? (car datum) 'and)
 		  (and-exp (map parse-expression (cdr datum)))]
+		 [(eq? (car datum) 'while)
+		  (while-exp (parse-expression (cadr datum)) (map parse-expression (cddr datum)))]
 		 [(eq? (car datum) 'or )
 		  (or-exp (map parse-expression (cdr datum)))]
 		 [(eq? (car datum) 'case)

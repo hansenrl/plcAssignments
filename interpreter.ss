@@ -61,6 +61,8 @@
 				  the-val))]
 	   [begin-exp (body)
 		      (eval-begin-list body env)]
+	   [while-exp (test-exp bodies)
+		      (while-eval test-exp bodies env)]
 	   [else (eopl:error 'eval-expression
 			     "incorrect expression type ~s" exp)])))
 
@@ -131,6 +133,12 @@
 							(car bodies)
 							(case-exp key (cdr conditions) (cdr bodies))))))]
 	   [else expr])))
+
+(define while-eval
+  (lambda (test bodies env)
+    (if (eval-expression test env)
+	(begin (eval-begin-list bodies env)
+	       (while-eval test bodies env)))))
 
 (define eval-expression-list
   (lambda (explist env)
