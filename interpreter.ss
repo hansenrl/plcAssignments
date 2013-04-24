@@ -54,9 +54,11 @@
 		    (unparse-let 'let* defs body)]
 	   [namedlet*-exp (id defs body) 
 			 (unparse-namedlet 'let* id defs body)]
-	   [set-exp (body)
-		    (cons 'set!
-			  (unparse-definition body))]
+	   [set-exp (sym val)
+		    (let ([the-val (eval-expression val env)])
+		      (change-env env
+				  sym
+				  the-val))]
 	   [begin-exp (body)
 		      (eval-begin-list body env)]
 	   [while-exp (test-exp bodies)
@@ -104,7 +106,7 @@
 			(if (null? (cdr exps))
 			    (expand-syntax (car exps))
 			    (ifelse-exp (expand-syntax (car exps))
-					(lit-exp #t)
+					(expand-syntax (car exps))
 					(expand-syntax (or-exp (cdr exps))))))]
 	   [let*-exp (defs body)
 		     (if (null? defs)

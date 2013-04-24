@@ -30,6 +30,18 @@
 	    (if (number? pos)
 		(vector-ref vals pos)
 		(apply-env env sym)))))))
+    
+(define change-env
+  (lambda (env sym val)
+    (if (null? env)
+	(eopl:error 'apply-env "No binding for ~s" sym)
+	(let ([syms (caar env)]
+	      [vals (cdar env)]
+	      [env (cdr env)])
+	  (let ((pos (find-position sym syms)))
+	    (if (number? pos)
+		(vector-set! vals pos val)
+		(change-env env sym val)))))))
 
 (define find-position
   (lambda (sym ls)
