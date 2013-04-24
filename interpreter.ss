@@ -103,9 +103,10 @@
 			(lit-exp #f)
 			(if (null? (cdr exps))
 			    (expand-syntax (car exps))
-			    (ifelse-exp (expand-syntax (car exps))
-					(expand-syntax (car exps))
-					(expand-syntax (or-exp (cdr exps))))))]
+			    (expand-syntax (let-exp (list (list 'res (expand-syntax (car exps))) )
+						    (list (ifelse-exp (var-exp 'res)
+								      (var-exp 'res)
+								      (expand-syntax (or-exp (cdr exps)))))))))]
 	   [let*-exp (defs body)
 		     (if (null? defs)
 			 (expand-syntax (let-exp '() body))
@@ -168,7 +169,7 @@
 			       (eval-begin-list body (extend-env id args env))]
 	       [primitive (id)
 			  (apply-primitive-proc id args)])
-	(proc arg))))
+	(proc args))))
 
 (define apply-primitive-proc
   (lambda (id args)
@@ -178,6 +179,8 @@
       [(car) (apply car args)]
       [(cdr) (cdar args)]
       [(add1) (apply add1 args)]
+      [(map) (map (eval (cadar args)) (cadr args))]
+      [(apply) (apply (eval (cadar args)) (cadr args))]
       [else 
        (apply (eval id) args)])))
       ;[else
@@ -190,7 +193,7 @@
       list? pair? procedure? vector->list vector make-vector
       vector-ref vector? number? symbol? set-car! set-cdr!
       vector-set! caar cadr cdar cddr caaar caadr cadar
-      caddr cdaar cdadr cddar cdddr eqv?))
+      caddr cdaar cdadr cddar cdddr eqv? set-car! map apply assq assv append))
 
 (define global-env
   (extend-env *prim-proc-names*
