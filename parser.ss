@@ -44,7 +44,8 @@
    (defs (list-of definition?))
    (body (list-of expression?)))
   (set-exp
-   (body definition?))
+   (id symbol?)
+   (val expression?))
   (begin-exp
    (body (list-of expression?)))
   (cond-exp
@@ -109,8 +110,8 @@
 		  (if (symbol? (cadr datum))
 		      (parse-namedlet namedletrec-exp datum)
 		      (parse-let letrec-exp datum))]
-		 [(eq? (car datum) 'set!)
-		  (set-exp (parse-definition (cdr datum)))]
+		 [(eqv? (car datum) 'set!)
+		  (set-exp (cadr datum) (parse-expression (caddr datum)))]
 		 [(eq? (car datum) 'vector)
 		  (lit-exp (list->vector (cdr datum)))]
 		 [(eq? (car datum) 'quote)
