@@ -136,7 +136,7 @@
 (define while-eval
   (lambda (test bodies env)
     (if (eval-expression test env)
-	(begin (map (lambda (x) (eval-expression x env)) bodies)
+	(begin (eval-begin-list bodies env)
 	       (while-eval test bodies env)))))
 
 (define eval-expression-list
