@@ -1,6 +1,35 @@
+;;; Erik Sanders
+;;; Ross Hansen
+
+;;; Supported Forms
+;<program>     ::= <form>* 
+;<form>        ::= <expression>  
+;<expression>  ::= <constant>  
+;              ::= <variable>  
+;              ::= (quote <datum>)  
+;              ::= (lambda <formals> <expression> <expression>*)  
+;              ::= (if <expression> <expression> <expression>)
+;              ::= (if <expression> <expression>)
+;              ::= <application>  
+;              ::= (begin <expression>*)
+;              ::= (let ({<variable> <expression>}*) {<expression>}+)
+;              ::= (let* ({<variable> <expression>}*) {<expression>}+)
+;              ::= (cond {(<expression> <expression>)}+)
+;              ::= (case <expression> {[<constant> {<expression>}+]}+) |
+;                  (case <expression> {[({<constant>}+) {<expression>}+]}+)
+;              ::= (and {<expression>}*)
+;              ::= (or {<expression>}*)  
+;              ::= (while <expression> {<expression>}+)
+;<constant>    ::= <boolean> | <number> | <character> | <string> | <vector> 
+;<formals>     ::= <variable>  
+;              ::= (<variable>*)  
+;              ::= (<variable> <variable>* . <variable>)  
+;<application> ::= (<expression> <expression>*)  
+
 (load "env.ss")
 (load "interpreter.ss")
 (load "parser.ss")
+(load "syntax-defines.ss")
 
 (define (rl) (load "main.ss"))
 

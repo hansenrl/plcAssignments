@@ -1,22 +1,3 @@
-
-;;; Supported Forms
-;<program>     ::= <form>* 
-;<form>        ::= <expression>  
-;<expression>  ::= <constant>  
-;              ::= <variable>  
-;              ::= (quote <datum>)  
-;              ::= (lambda <formals> <expression> <expression>*)  
-;              ::= (if <expression> <expression> <expression>)
-;              ::= (if <expression> <expression>)
-;              ::= <application>  
-;              ::= (begin <expression>*)
-;<constant>    ::= <boolean> | <number> | <character> | <string> | <vector> 
-;<formals>     ::= <variable>  
-;              ::= (<variable>*)  
-;              ::= (<variable> <variable>* . <variable>)  
-;<application> ::= (<expression> <expression>*)  
-
-
 (define eval-one-exp
   (lambda (exp)
     (let* ([parse-tree (expand-syntax (parse-expression exp))]
