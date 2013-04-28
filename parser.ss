@@ -23,8 +23,8 @@
    (if-true expression?)
    (if-false expression?))
   (letrec-exp
-   (defs definition-list?)
-   (body expression-list?))
+   (defs (list-of definition?))
+   (body (list-of expression?)))
   (namedletrec-exp
    (id symbol?)
    (defs definition-list?)
@@ -62,6 +62,9 @@
    (key expression?)
    (conditions (list-of (list-of expression?)))
    (bodies (list-of expression?)))
+  (define-exp
+    (id symbol?)
+    (exp expression?))
 )
 
 (define lambda-parameter-list?
@@ -138,6 +141,9 @@
 				       (list (parse-expression x))))
 				 (map car (cddr datum)))
 			    (map parse-expression (map cadr (cddr datum))))]
+		 [(eq? (car datum) 'define)
+		  (define-exp (cadr datum)
+		              (parse-expression (caddr datum)))]
 		 [else (app-exp (parse-expression (car datum))
 				(if (list? (cdr datum))
 				    (parse-explist (cdr datum))
