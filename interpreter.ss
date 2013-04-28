@@ -1,7 +1,15 @@
+(define top-level-eval
+  (lambda (form)
+    (cases expression form
+	   [define-exp (sym val)
+	     (extend-global-env sym (eval-expression val (empty-env)))]
+	   [else (eval-expression form (empty-env))])))
+
+
 (define eval-one-exp
   (lambda (exp)
     (let* ([parse-tree (expand-syntax (parse-expression exp))]
-	   [initial-environment global-env]
+	   [initial-environment empty-env]
 	   [result (eval-expression parse-tree initial-environment)])
       result)))
 
@@ -184,7 +192,9 @@
       vector-set! caar cadr cdar cddr caaar caadr cadar
       caddr cdaar cdadr cddar cdddr eqv? set-car! map apply assq assv append))
 
+
 (define global-env
-  (extend-env *prim-proc-names*
-	      (map primitive *prim-proc-names*)
-	      (empty-env)))
+  (map (lambda (name)
+	 (cons name (primitive name)))
+       primitive-procedure-names))
+

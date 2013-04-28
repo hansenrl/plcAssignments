@@ -17,7 +17,30 @@
 	  [else
 	   (extend-env (cdr syms) (cdr vals) 
 		       (cons (cons (list (car syms)) (list->vector (list (car vals)))) env))])))
-		 
+
+;;; handles letrecs
+(define extend-env-recur
+  (lambda (syms vals env)
+    (let* ([vec (list->vector vals)]
+	   [new-env (cons (cons syms vec) env)])
+      (for-each (lambda (item pos)
+		  (if (proc? item)
+		      (vector-set! vec
+				   pos
+				   (cases proc item
+					  [closure (ids bodies toss-env)
+						   (closure ids bodies new-env)]
+					  [primitive (id)
+						     item]))))
+		vals
+		(make-indices (- (length vals) 1) '()))
+      new-env)))
+
+(define make-indices
+  (lambda (n accu)
+    (if (= n 0)
+	(cons 0 accu)
+	(make-indices (- n 1) (cons n accu)))))
 
 (define apply-env
   (lambda (env sym)
