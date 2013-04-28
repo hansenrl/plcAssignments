@@ -8,6 +8,10 @@
     (lambda ()
           '()))
 
+(define extend-global-env
+  (lambda (sym val)
+    (set! global-env (cons (cons sym val) global-env))))
+
 (define extend-env
   (lambda (syms vals env)
     (cond [(symbol? syms)
@@ -42,10 +46,17 @@
 	(cons 0 accu)
 	(make-indices (- n 1) (cons n accu)))))
 
+(define apply-global-env
+  (lambda (sym)
+    (let ([result (assv sym global-env)])
+      (if (null? result)
+	  (eopl:error 'apply-global-env "No binding for ~s" sym)
+	  (cdr result)))))
+
 (define apply-env
   (lambda (env sym)
     (if (null? env)
-	(eopl:error 'apply-env "No binding for ~s" sym)
+	(apply-global-env sym)  ;(eopl:error 'apply-env "No binding for ~s" sym)
 	(let ([syms (car (car env))]
 	      [vals (cdr (car env))]
 	      [env (cdr env)])
@@ -53,11 +64,19 @@
 	    (if (number? pos)
 		(vector-ref vals pos)
 		(apply-env env sym)))))))
+
+(define change-global-env
+  (lambda (sym val)
+    (let ([result (assv sym global-env)])
+      (if (null? result)
+	  (eopl:error 'change-global-env "No existing binding for ~s" sym)
+	  (set-cdr! result val)))))
+    
     
 (define change-env
   (lambda (env sym val)
     (if (null? env)
-	(eopl:error 'apply-env "No binding for ~s" sym)
+	(change-global-env sym val) ;(eopl:error 'apply-env "No binding for ~s" sym)
 	(let ([syms (caar env)]
 	      [vals (cdar env)]
 	      [env (cdr env)])
@@ -78,3 +97,6 @@
 (define environment?
   (lambda x
     #t))
+
+(define reset-global-env
+             (lambda () (set! global-env (make-init-env))))
