@@ -25,20 +25,25 @@
 ;;; handles letrecs
 (define extend-env-recur
   (lambda (syms vals env)
-    (let* ([vec (list->vector vals)]
-	   [new-env (cons (cons syms vec) env)])
-      (for-each (lambda (item pos)
-		  (if (proc? item)
-		      (vector-set! vec
-				   pos
-				   (cases proc item
-					  [closure (ids bodies toss-env)
-						   (closure ids bodies new-env)]
-					  [primitive (id)
-						     item]))))
-		vals
-		(make-indices (- (length vals) 1) '()))
-      new-env)))
+    (cond [(symbol? syms)
+	   (extend-env-recur (list syms) (list vals) env)]
+;	  [(not (list? syms))
+;	   (extend-env-recur (cdr syms) (cdr vals) (extend-env-recur (car syms) (car vals) env))]
+	  [else
+	   (let* ([vec (list->vector vals)]
+		  [new-env (cons (cons syms vec) env)])
+	     (for-each (lambda (item pos)
+			 (begin (display "**new-env ") (display new-env) (newline) (if (procedure? item)
+			     (vector-set! vec
+					  pos
+					  (cases procedure item
+						 [closure-record (ids bodies toss-env)
+							  (closure-record ids bodies new-env)]
+						 [primitive (id)
+							    item])))))
+		       vals
+		       (make-indices (- (length vals) 1) '()))
+	     new-env)])))
 
 (define make-indices
   (lambda (n accu)
@@ -49,9 +54,25 @@
 (define apply-global-env
   (lambda (sym)
     (let ([result (assv sym global-env)])
-      (if (null? result)
+      (if (not result)
 	  (eopl:error 'apply-global-env "No binding for ~s" sym)
 	  (cdr result)))))
+#|
+(define exists-in-global-env?
+  (lambda (sym)
+    (assv sym global-env)))
+|#
+(define exists-in-env?
+  (lambda (env sym)
+    (if (null? env)
+	#f ;(exists-in-global-env? sym)
+	(let ([syms (car (car env))]
+	      [vals (cdr (car env))]
+	      [env (cdr env)])
+	  (let ([pos (find-position sym syms)])
+	    (if (number? pos)
+		#t
+		(exists-in-env? env sym)))))))
 
 (define apply-env
   (lambda (env sym)
@@ -68,7 +89,7 @@
 (define change-global-env
   (lambda (sym val)
     (let ([result (assv sym global-env)])
-      (if (null? result)
+      (if (not result)
 	  (eopl:error 'change-global-env "No existing binding for ~s" sym)
 	  (set-cdr! result val)))))
     

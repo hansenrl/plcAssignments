@@ -50,6 +50,10 @@
 		      (eval-begin-list body env)]
 	   [while-exp (test-exp bodies)
 		      (while-eval test-exp bodies env)]
+	   [define-exp (sym val)
+	     (if (exists-in-env? env sym)
+		 (change-env env sym val)
+		 (extend-env-recur sym (eval-expression val env) env))]
 	   [else (eopl:error 'eval-expression
 			     "incorrect expression type ~s" exp)])))
 
@@ -119,6 +123,8 @@
 								     (car conditions)))
 							(car bodies)
 							(case-exp key (cdr conditions) (cdr bodies))))))]
+	   [define-exp (id exp)
+	     (define-exp id (expand-syntax exp))]
 	   [else expr])))
 
 (define while-eval
@@ -136,12 +142,14 @@
 
 (define eval-begin-list
   (lambda (explist env)
+    ;(begin (display env) (newline)
     (cond [(null? explist) (void)]
 	  [(null? (cdr explist))
 	   (eval-expression (car explist) env)]
 	  [else
-	   (begin (eval-expression (car explist) env)
-		  (eval-begin-list (cdr explist) env))])))
+	   (if (and (pair? (car explist)) (eqv? 'define-exp (caar explist))) 
+	     (eval-begin-list (cdr explist) (eval-expression (car explist) env))
+	     (begin (eval-expression (car explist) env) (eval-begin-list (cdr explist) env)))])));)
 
 (define make-closure
   (lambda (id body env)
