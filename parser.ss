@@ -81,9 +81,14 @@
 	 (symbol? (car def))
 	 (expression? (cadr def)))))
 
+(define attoplevelflag 1)
 
 (define parse-expression
   (lambda (datum)
+    (if attoplevelflag 
+	(if (= attoplevelflag 0)
+	    (set! attoplevelflag #f)
+	    (set! attoplevelflag (- attoplevelflag 1))))
     (cond [(symbol? datum) (var-exp datum)]
 	  [(number? datum) (lit-exp datum)]
 	  [(pair? datum)
@@ -123,7 +128,9 @@
 		 [(eq? (car datum) 'quote)
 		  (lit-exp (cadr datum))]
 		 [(eq? (car datum) 'begin)
-		  (begin-exp (parse-explist (cdr datum)))]
+		  (if attoplevelflag
+		      (begin-exp (parse-explistkeepdefine (cdr datum)))
+		      (begin-exp (parse-explist (cdr datum))))]
 		 [(eq? (car datum) 'cond)
 		  (cond-exp (map parse-expression (map car (cdr datum)))
 			    (map parse-expression (map cadr (cdr datum))))]
@@ -206,9 +213,32 @@
   (lambda (datum)
     (cond [(null? datum)
 	   '()]
+	  [(and (not attoplevelflag) (pair? (car datum))(eq? (caar datum) 'define))
+	   (let ([defbodylist (define-body-split datum '())])
+	     (list (letrec-exp (car defbodylist) (cadr defbodylist))))]
 	  [else
 	   (cons (parse-expression (car datum))
 		 (parse-explist (cdr datum)))])))
+
+(define parse-explistkeepdefine
+  (lambda (datum)
+    (cond [(null? datum)
+	   '()]
+	  [else
+	   (cons (parse-expression (car datum))
+		 (parse-explistkeepdefine (cdr datum)))])))
+
+(define define-body-split
+  (lambda (datum accu)
+    (cond [(null? datum)
+	   (list accu '())]
+	  [(eq? (caar datum) 'define)
+	   (define-body-split (cdr datum) 
+                              (cons (list (cadar datum)
+					  (parse-expression (caddar datum)))
+				    accu))]
+	  [else
+	   (list accu (parse-explist datum))])))
 
 
 (define unparse-expression
