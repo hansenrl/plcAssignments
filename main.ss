@@ -3,7 +3,9 @@
 
 ;;; Supported Forms
 ;<program>     ::= <form>* 
-;<form>        ::= <expression>  
+;<form>                ::=  <definition> | <expression>
+;<definition>          ::=  <variable definition> | (begin <definition>*)
+;<variable definition> ::= (define <variable> <expression>)
 ;<expression>  ::= <constant>  
 ;              ::= <variable>  
 ;              ::= (quote <datum>)  
@@ -13,7 +15,10 @@
 ;              ::= <application>  
 ;              ::= (begin <expression>*)
 ;              ::= (let ({<variable> <expression>}*) {<expression>}+)
+;              ::= (let <symbol> ({variable> <expression>}*) {<expression>}+)
 ;              ::= (let* ({<variable> <expression>}*) {<expression>}+)
+;	       ::= (letrec ({<variable> <expression>}*) {<expression>+})
+;              ::= (set! <variable> <expression>)
 ;              ::= (cond {(<expression> <expression>)}+)
 ;              ::= (case <expression> {[<constant> {<expression>}+]}+) |
 ;                  (case <expression> {[({<constant>}+) {<expression>}+]}+)
@@ -24,7 +29,8 @@
 ;<formals>     ::= <variable>  
 ;              ::= (<variable>*)  
 ;              ::= (<variable> <variable>* . <variable>)  
-;<application> ::= (<expression> <expression>*)  
+;<application> ::= (<expression> <expression>*) 
+ 
 
 (load "env.ss")
 (load "interpreter.ss")
