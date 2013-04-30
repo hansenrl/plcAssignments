@@ -27,16 +27,16 @@
   (lambda (syms vals env)
     (cond [(symbol? syms)
 	   (extend-env-recur (list syms) (list vals) env)]
-;	  [(not (list? syms))
-;	   (extend-env-recur (cdr syms) (cdr vals) (extend-env-recur (car syms) (car vals) env))]
+	  [(not (list? syms))
+	   (extend-env-recur (cdr syms) (cdr vals) (extend-env-recur (car syms) (car vals) env))]
 	  [else
 	   (let* ([vec (list->vector vals)]
 		  [new-env (cons (cons syms vec) env)])
 	     (for-each (lambda (item pos)
-			 (begin (display "**new-env ") (display new-env) (newline) (if (procedure? item)
+			 (begin #|(display "**new-env ") (display new-env) (newline) (display "**item ") (display item) (display "\nprocedure? ") (display (proc? item)) (display "\n\n")|# (if (proc? item)
 			     (vector-set! vec
 					  pos
-					  (cases procedure item
+					  (cases proc item
 						 [closure-record (ids bodies toss-env)
 							  (closure-record ids bodies new-env)]
 						 [primitive (id)

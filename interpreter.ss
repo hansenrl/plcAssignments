@@ -19,9 +19,9 @@
 	   [lambda-exp (id body)
 		       (make-closure id body env)]
 	   [app-exp (operator operand)
-		    (let ([procedure (eval-expression operator env)]
+		    (let ([proc (eval-expression operator env)]
 			  [arg (eval-expression-list operand env)])
-		      (apply-proc procedure arg env))]
+		      (apply-proc proc arg env))]
 	   [if-exp (condition if-true)
 		   (if (eval-expression condition env)
 		       (eval-expression if-true env))]
@@ -30,7 +30,12 @@
 			   (eval-expression if-true env)
 			   (eval-expression if-false env))]
 	   [letrec-exp (defs body)
-		       (unparse-let 'letrec defs body)]
+		       (eval-begin-list body 
+					(extend-env-recur (map car defs) 
+							  (map (lambda (x) 
+								 (eval-expression x env))
+							       (map cadr defs)) 
+							  env))];(unparse-let 'letrec defs body)]
 	   [namedletrec-exp (id defs body) 
 			    (unparse-namedlet 'letrec id defs body)]
 	   [let-exp (defs body)
@@ -53,7 +58,7 @@
 	   [define-exp (sym val)
 	     (if (exists-in-env? env sym)
 		 (change-env env sym val)
-		 (extend-env-recur sym (eval-expression val env) env))]
+		 (extend-env sym (eval-expression val env) env))]
 	   [else (eopl:error 'eval-expression
 			     "incorrect expression type ~s" exp)])))
 
@@ -155,7 +160,7 @@
   (lambda (id body env)
     (closure-record id body env)))
 
-(define-datatype procedure procedure?
+(define-datatype proc proc?
   [primitive
    (id symbol?)]
   [closure-record
@@ -164,15 +169,15 @@
    (env environment?)])
 
 (define apply-proc
-  (lambda (proc args env)
-    (if (procedure? proc)
-	(cases procedure proc
+  (lambda (procedure args env)
+    (if (proc? procedure)
+	(cases proc procedure
 	       [closure-record (id body env)
 			       ;(display body)])
 			       (eval-begin-list body (extend-env id args env))]
 	       [primitive (id)
 			  (apply-primitive-proc id args)])
-	(proc args))))
+	(procedure args))))
 
 (define apply-primitive-proc
   (lambda (id args)
@@ -195,7 +200,7 @@
       car cdr list null? eq? equal? atom? length list->vector
       list? pair? procedure? vector->list vector make-vector
       vector-ref vector? number? symbol? set-car! set-cdr!
-      vector-set! caar cadr cdar cddr caaar caadr cadar
+      vector-set! caar cadr cdar cddr caaar caadr cadar max
       caddr cdaar cdadr cddar cdddr eqv? set-car! map apply assq assv append))
 
 (define make-init-env
