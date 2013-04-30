@@ -31,8 +31,8 @@
    (body expression-list?))
   (namedlet-exp
    (id symbol?)
-   (defs definition-list?)
-   (body expression-list?))
+   (defs (list-of definition?))
+   (body (list-of expression?)))
   (let-exp
    (defs (list-of definition?))
    (body (list-of expression?)))
@@ -199,7 +199,7 @@
 	       (if (null? (cdddr datum))
 		   (eopl:error 'parse-expression
 			       "named let expression: empty body: ~s" datum)
-		   (parse-explistlistofexpressions (cddr datum))))))
+		   (parse-explist (cddr datum))))))
 
 (define parse-let 
   (lambda (typeofexp datum)
