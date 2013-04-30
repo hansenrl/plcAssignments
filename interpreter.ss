@@ -130,6 +130,12 @@
 							(case-exp key (cdr conditions) (cdr bodies))))))]
 	   [define-exp (id exp)
 	     (define-exp id (expand-syntax exp))]
+	   [letrec-exp (defs exps)
+		    (letrec-exp (map (lambda (def) 
+				       (list (car def) 
+					     (expand-syntax (cadr def)))) 
+				     defs) 
+				(map expand-syntax exps))]
 	   [else expr])))
 
 (define while-eval
