@@ -193,7 +193,7 @@
       [(car) (apply car args)]
       [(cdr) (cdar args)]
       [(add1) (apply add1 args)]
-      [(map) (map (eval (cadar args)) (cadr args))]
+      [(map) (map (lambda (x) (apply-proc (car args) (list x) (empty-env))) (cadr args))]
       [(apply) (apply (eval (cadar args)) (cadr args))]
       [else 
        (apply (eval id) args)])))
