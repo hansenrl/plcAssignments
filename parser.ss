@@ -199,7 +199,7 @@
 	       (if (null? (cdddr datum))
 		   (eopl:error 'parse-expression
 			       "named let expression: empty body: ~s" datum)
-		   (parse-explist (cddr datum))))))
+		   (parse-explist (cdddr datum))))))
 
 (define parse-let 
   (lambda (typeofexp datum)

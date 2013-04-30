@@ -136,6 +136,10 @@
 					     (expand-syntax (cadr def)))) 
 				     defs) 
 				(map expand-syntax exps))]
+	   [namedlet-exp (id defs bodies)
+			 (letrec-exp (list (cons id 
+						 (list (lambda-exp (map car defs) (map expand-syntax bodies))))) 
+				     (list (app-exp (var-exp id) (map expand-syntax (map cadr defs)))))]
 	   [else expr])))
 
 (define while-eval
