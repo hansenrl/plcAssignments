@@ -55,5 +55,5 @@
 	(if (eq? (car stuff) 'closure-record)
 	    '<interpreter-procedure>
 	    (cons (convertstuff (car stuff))
-		  (converstuff (cdr stuff))))
+		  (convertstuff (cdr stuff))))
 	stuff)))

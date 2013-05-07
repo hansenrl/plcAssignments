@@ -150,7 +150,7 @@
 		 [(eq? (car datum) 'define)
 		  (define-exp (cadr datum)
 		              (parse-expression (caddr datum)))]
-		 [else (app-exp (parse-explist datum))]
+		 [else (app-exp (parse-explist datum))])]
 	  [(scheme-value? datum) (lit-exp datum)]
 	  [else (eopl:error 'parse-expression
 			    "Invalid concrete syntac ~s" datum)])))

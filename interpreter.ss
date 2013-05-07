@@ -3,7 +3,7 @@
     (cases expression form
 	   [define-exp (sym val)
 	     (extend-global-env sym (eval-expression val (empty-env)))]
-	   [else (eval-expression form (empty-env))])))
+	   [else (eval-expression form (halt-cont) (empty-env))])))
 
 (define eval-one-exp
   (lambda (exp)
@@ -12,26 +12,26 @@
       result)))
 
 (define eval-exps
-  (lambda (exp cont env)
+  (lambda (exps cont env)
     (if (null? exps)
 	(apply-cont cont '())
 	(eval-expression (car exps) (eval-exps-cont (cdr exps) env cont) env))))
 
 (define eval-expression
-  (lambda (exp cont env )
+  (lambda (exp cont env)
     (cases expression exp
-	   [var-exp (id) (apply-cont cont (apply-env env id)]
+	   [var-exp (id) (apply-cont cont (apply-env env id))]
 	   [lit-exp (val) (apply-cont cont val)]
 	   [lambda-exp (id body)
-		       (apply-cont cont (make-closure id body env))]
+		       (apply-cont cont (closure-record id body env))]
 	   [app-exp (exps)
 		    (eval-exps exps (proc-cont cont) env)]
 	   [if-exp (condition if-true)
 		   (eval-expression test-exp (if-cont true-exp false-exp cont env) env)]
 	   [ifelse-exp (condition if-true if-false)
-		       (if (eval-expression condition env)
-			   (eval-expression if-true env)
-			   (eval-expression if-false env))]
+		       (if (eval-expression condition cont env)
+			   (eval-expression if-true cont env)
+			   (eval-expression if-false cont env))]
 	   [letrec-exp (defs body)
 		       (eval-begin-list body 
 					(extend-env-recur (map car defs) 
@@ -78,8 +78,8 @@
 	   [if-exp (conditional if-true)
 		   (if-exp (expand-syntax conditional)
 			   (expand-syntax if-true))]
-	   [app-exp (operator operand)
-		    (app-exp (expand-syntax operator) (map expand-syntax operand))]
+	   [app-exp (exps)
+		    (app-exp (map expand-syntax exps))]
 	   [lambda-exp (ids bodies)
 		       (lambda-exp ids (map expand-syntax bodies))]
 	   [cond-exp (conditions bodies)
@@ -159,15 +159,15 @@
 		 (eval-expression-list (cdr explist) env))])))
 
 (define eval-begin-list
-  (lambda (explist env)
+  (lambda (explist cont env)
     ;(begin (display env) (newline)
     (cond [(null? explist) (void)]
 	  [(null? (cdr explist))
-	   (eval-expression (car explist) env)]
+	   (eval-expression (car explist) cont env)]
 	  [else
 	   (if (and (pair? (car explist)) (eqv? 'define-exp (caar explist))) 
-	     (eval-begin-list (cdr explist) (eval-expression (car explist) env))
-	     (begin (eval-expression (car explist) env) (eval-begin-list (cdr explist) env)))])));)
+	     (eval-begin-list (cdr explist) cont (eval-expression (car explist) env))
+	     (begin (eval-expression (car explist) cont env) (eval-begin-list (cdr explist) cont env)))])));)
 
 (define make-closure
   (lambda (id body env)
@@ -182,28 +182,28 @@
    (env environment?)])
 
 (define apply-proc
-  (lambda (procedure args env)
+  (lambda (procedure args cont)
     (if (proc? procedure)
 	(cases proc procedure
 	       [closure-record (id body env)
 			       ;(display body)])
-			       (eval-begin-list body (extend-env id args env))]
+			       (eval-begin-list body cont (extend-env id args env))]
 	       [primitive (id)
-			  (apply-primitive-proc id args)])
+			  (apply-primitive-proc id args cont)])
 	(procedure args))))
 
 (define apply-primitive-proc
-  (lambda (id args)
+  (lambda (id args cont)
     (case id
-      [(+) (apply + args)]
-      [(-) (apply - args)]
-      [(car) (apply car args)]
-      [(cdr) (cdar args)]
-      [(add1) (apply add1 args)]
+      ;[(+) (apply-cont cont (apply + args)]
+      ;[(-) (apply - args)]
+      ;[(car) (apply car args)]
+      ;[(cdr) (cdar args)]
+      ;[(add1) (apply add1 args)]
       [(map) (map (lambda (x) (apply-proc (car args) (list x) (empty-env))) (cadr args))]
       [(apply) (apply (eval (cadar args)) (cadr args))]
       [else 
-       (apply (eval id) args)])))
+       (apply-cont cont (apply (eval id) args))])))
       ;[else
        ;(eopl:error 'apply-primitive-proc
 	;	   "primitive not defined ~s" id)])))

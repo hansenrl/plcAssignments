@@ -21,14 +21,14 @@
   (lambda (cont val)
     (cases continuation cont
 	   [halt-cont ()
-		      (pretty-print val)]
+		      val]
 	   [eval-exps-cont (exps env cont)
 			   (eval-exps exps (cons-cont val cont) env)]
 	   [cons-cont (v cont)
 		      (apply-cont cont (cons v val))]
 
 	   [proc-cont (cont)
-		      (apply-proc val cont)]
+		      (apply-proc (car val) (cdr val) cont)]
 	   [if-cont (if-true-exp if-false-exp next-cont env)
 		    (if val
 			(eval-expression if-true-exp next-cont env)
