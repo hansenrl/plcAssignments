@@ -13,8 +13,7 @@
    (parameters lambda-parameter-list?)
    (body (list-of expression?)))
   (app-exp
-   (operator expression?)
-   (operand (list-of expression?)))
+   (body (list-of expression?)))
   (if-exp
    (condition expression?)
    (if-true expression?))
@@ -151,11 +150,7 @@
 		 [(eq? (car datum) 'define)
 		  (define-exp (cadr datum)
 		              (parse-expression (caddr datum)))]
-		 [else (app-exp (parse-expression (car datum))
-				(if (list? (cdr datum))
-				    (parse-explist (cdr datum))
-				    (eopl:error 'parse-expression
-						"app-exp: not proper arg list: ~s" datum)))])]
+		 [else (app-exp (parse-explist datum))]
 	  [(scheme-value? datum) (lit-exp datum)]
 	  [else (eopl:error 'parse-expression
 			    "Invalid concrete syntac ~s" datum)])))
