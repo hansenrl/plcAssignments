@@ -36,6 +36,7 @@
 (load "interpreter.ss")
 (load "parser.ss")
 (load "syntax-defines.ss")
+(load "cont.ss")
 
 (define (rl) (load "main.ss"))
 

@@ -11,20 +11,23 @@
 	   [result (top-level-eval parse-tree)])
       result)))
 
+(define eval-exps
+  (lambda (exp cont env)
+    (if (null? exps)
+	(apply-cont cont '())
+	(eval-expression (car exps) (eval-exps-cont (cdr exps) env cont) env))))
+
 (define eval-expression
-  (lambda (exp env)
+  (lambda (exp cont env )
     (cases expression exp
-	   [var-exp (id) (apply-env env id)]
-	   [lit-exp (val) val]
+	   [var-exp (id) (apply-cont cont (apply-env env id)]
+	   [lit-exp (val) (apply-cont cont val)]
 	   [lambda-exp (id body)
-		       (make-closure id body env)]
-	   [app-exp (operator operand)
-		    (let ([proc (eval-expression operator env)]
-			  [arg (eval-expression-list operand env)])
-		      (apply-proc proc arg env))]
+		       (apply-cont cont (make-closure id body env))]
+	   [app-exp (exps)
+		    (eval-exps exps (proc-cont cont) env)]
 	   [if-exp (condition if-true)
-		   (if (eval-expression condition env)
-		       (eval-expression if-true env))]
+		   (eval-expression test-exp (if-cont true-exp false-exp cont env) env)]
 	   [ifelse-exp (condition if-true if-false)
 		       (if (eval-expression condition env)
 			   (eval-expression if-true env)
