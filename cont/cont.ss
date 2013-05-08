@@ -17,7 +17,18 @@
    (true-exp expression?)
    (false-exp expression?)
    (cont continuation?)
-   (env list?)))
+   (env list?))
+  (set-cont
+   (env environment?)
+   (sym symbol?)
+   (cont continuation?))
+  (extend-env-cont
+   (sym symbol?)
+   (env environment?)
+   (cont continuation?))
+  (extend-global-env-cont
+   (sym symbol?)
+   (cont continuation?)))
 
 (define scheme-value? (lambda (x) #t))
 
@@ -39,5 +50,11 @@
 	   [if-else-cont (if-true-exp if-false-exp next-cont env)
 		    (if val
 			(eval-expression if-true-exp next-cont env)
-			(eval-expression if-false-exp next-cont env))])))
+			(eval-expression if-false-exp next-cont env))]
+	   [set-cont (env sym cont)
+		     (apply-cont cont (change-env env sym val))]
+	   [extend-env-cont (sym env cont)
+			    (apply-cont cont (extend-env sym val env))]
+	   [extend-global-env-cont (sym cont)
+				   (apply-cont cont (extend-global-env sym val))])))
 	    

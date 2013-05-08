@@ -2,7 +2,8 @@
   (lambda (form)
     (cases expression form
 	   [define-exp (sym val)
-	     (extend-global-env sym (eval-expression val (empty-env)))]
+	     (eval-expression val (extend-global-env-cont sym (halt-cont)) (empty-env))]
+	     ;(extend-global-env sym (eval-expression val (empty-env)))]
 	   [else (eval-expression form (halt-cont) (empty-env))])))
 
 (define eval-one-exp
@@ -48,10 +49,11 @@
 	   [namedlet*-exp (id defs body) 
 			 (unparse-namedlet 'let* id defs body)]
 	   [set-exp (sym val)
-		    (let ([the-val (eval-expression val env)])
-		      (change-env env
-				  sym
-				  the-val))]
+		    (eval-expression val (set-cont env sym cont) env)]
+		    ;(let ([the-val (eval-expression val env)])
+		    ;  (change-env env
+		;		  sym
+		;		  the-val))]
 	   [begin-exp (body)
 		      (eval-begin-list body env)]
 	   [while-exp (test-exp bodies)
@@ -59,7 +61,8 @@
 	   [define-exp (sym val)
 	     (if (exists-in-env? env sym)
 		 (change-env env sym val)
-		 (extend-env sym (eval-expression val env) env))]
+		 (eval-expression val (extend-env-cont sym env cont) env))]
+		 ;(extend-env sym (eval-expression val env) env))]
 	   [else (eopl:error 'eval-expression
 			     "incorrect expression type ~s" exp)])))
 
@@ -67,8 +70,8 @@
   (lambda (expr)
     (cases expression expr
 	   [let-exp (defs body)
-		    (app-exp (lambda-exp (map car defs)  (map expand-syntax body))
-			     (map expand-syntax (map cadr defs)))]
+		    (app-exp (cons (lambda-exp (map car defs)  (map expand-syntax body))
+			     (map expand-syntax (map cadr defs))))]
 	   [ifelse-exp (conditional if-true if-false)
 		   (ifelse-exp (expand-syntax conditional)
 			   (expand-syntax if-true)
