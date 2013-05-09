@@ -27,11 +27,9 @@
 	   [app-exp (exps)
 		    (eval-exps exps (proc-cont cont) env)]
 	   [if-exp (condition if-true)
-		   (eval-expression test-exp (if-cont true-exp false-exp cont env) env)]
+		   (eval-expression condition (if-cont if-true cont env) env)]
 	   [ifelse-exp (condition if-true if-false)
-		       (if (eval-expression condition cont env)
-			   (eval-expression if-true cont env)
-			   (eval-expression if-false cont env))]
+		       (eval-expression condition (if-else-cont if-true if-false cont env) env)]
 	   [letrec-exp (defs body)
 		       (eval-begin-list body 
 					(extend-env-recur (map car defs) 
@@ -202,6 +200,9 @@
       ;[(add1) (apply add1 args)]
       [(map) (map (lambda (x) (apply-proc (car args) (list x) (empty-env))) (cadr args))]
       [(apply) (apply (eval (cadar args)) (cadr args))]
+      [(procedure?) (or (proc? (car args)))]
+			       
+			 
       [else 
        (apply-cont cont (apply (eval id) args))])))
       ;[else

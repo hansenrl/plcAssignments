@@ -11,6 +11,10 @@
    (cont continuation?))
   (if-cont
    (true-exp expression?)
+   (cont continuation?)
+   (env list?))
+  (if-else-cont
+   (true-exp expression?)
    (false-exp expression?)
    (cont continuation?)
    (env list?)))
@@ -29,7 +33,10 @@
 
 	   [proc-cont (cont)
 		      (apply-proc (car val) (cdr val) cont)]
-	   [if-cont (if-true-exp if-false-exp next-cont env)
+	   [if-cont (if-true-exp next-cont env)
+		    (if val
+			(eval-expression if-true-exp next-cont env))]
+	   [if-else-cont (if-true-exp if-false-exp next-cont env)
 		    (if val
 			(eval-expression if-true-exp next-cont env)
 			(eval-expression if-false-exp next-cont env))])))
