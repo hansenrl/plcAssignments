@@ -43,11 +43,13 @@
 (define (rep)
   (begin
     (display "--> ")
+    ;(top-level-eval (expand-syntax (parse-expression (read))) (rep-cont))))
     (let ([in (read)])
       (if (not (equal? in '(exit)))
-	  (begin (write (convertstuff (eval-one-exp in)))
-		 (newline)
-		 (rep))))))
+	  (top-level-eval (expand-syntax (parse-expression in)) (rep-cont))))))
+	; (begin (write (convertstuff (eval-one-exp in)))
+	;	 (newline)
+	;	 (rep))))))
      
 (define convertstuff
   (lambda (stuff)

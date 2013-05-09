@@ -40,7 +40,9 @@
 						 [closure-record (ids bodies toss-env)
 							  (closure-record ids bodies new-env)]
 						 [primitive (id)
-							    item])))))
+							    item]
+						 [acontinuation (cont)
+								item])))))
 		       vals
 		       (make-indices (- (length vals) 1) '()))
 	     new-env)])))

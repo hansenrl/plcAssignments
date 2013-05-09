@@ -1,15 +1,15 @@
 (define top-level-eval
-  (lambda (form)
+  (lambda (form cont)
     (cases expression form
 	   [define-exp (sym val)
-	     (eval-expression val (extend-global-env-cont sym (halt-cont)) (empty-env))]
+	     (eval-expression val (extend-global-env-cont sym cont) (empty-env))]
 	     ;(extend-global-env sym (eval-expression val (empty-env)))]
-	   [else (eval-expression form (halt-cont) (empty-env))])))
+	   [else (eval-expression form cont (empty-env))])))
 
 (define eval-one-exp
   (lambda (exp)
     (let* ([parse-tree (expand-syntax (parse-expression exp))]
-	   [result (top-level-eval parse-tree)])
+	   [result (top-level-eval parse-tree (halt-cont))])
       result)))
 
 (define eval-exps
@@ -33,11 +33,12 @@
 		       (eval-expression condition (if-else-cont if-true if-false cont env) env)]
 	   [letrec-exp (defs body)
 		       (eval-begin-list body 
+					cont
 					(extend-env-recur (map car defs) 
 							  (map (lambda (x) 
-								 (eval-expression x env))
+								 (eval-expression x (halt-cont) env)) ; does this need to be in cps?
 							       (map cadr defs)) 
-							  env))];(unparse-let 'letrec defs body)]
+							  env))]
 	   [namedletrec-exp (id defs body) 
 			    (unparse-namedlet 'letrec id defs body)]
 	   [let-exp (defs body)
@@ -55,14 +56,17 @@
 		;		  sym
 		;		  the-val))]
 	   [begin-exp (body)
-		      (eval-begin-list body env)]
+		      (eval-begin-list body cont env)]
 	   [while-exp (test-exp bodies)
-		      (while-eval test-exp bodies env)]
+		      (eval-expression test-exp (while-cont test-exp bodies cont env) env)]
+		      ;(while-eval test-exp bodies env)]
 	   [define-exp (sym val)
 	     (if (exists-in-env? env sym)
 		 (change-env env sym val)
 		 (eval-expression val (extend-env-cont sym env cont) env))]
 		 ;(extend-env sym (eval-expression val env) env))]
+	   [call/cc-exp (receiver)
+			(eval-expression receiver (call/cc-cont cont) env)]
 	   [else (eopl:error 'eval-expression
 			     "incorrect expression type ~s" exp)])))
 
@@ -143,7 +147,9 @@
 	   [namedlet-exp (id defs bodies)
 			 (letrec-exp (list (cons id 
 						 (list (lambda-exp (map car defs) (map expand-syntax bodies))))) 
-				     (list (app-exp (var-exp id) (map expand-syntax (map cadr defs)))))]
+				     (list (app-exp (cons (var-exp id) (map expand-syntax (map cadr defs))))))]
+	   [call/cc-exp (receiver)
+			(call/cc-exp (expand-syntax receiver))]
 	   [else expr])))
 
 (define while-eval
@@ -152,7 +158,7 @@
 	(begin (eval-begin-list bodies env)
 	       (while-eval test bodies env)))))
 
-(define eval-expression-list
+(define eval-expression-list ; added continuation to this to make a "map" procedure that has continuations
   (lambda (explist env)
     (cond [(null? explist) '()]
 	  [else 
@@ -164,11 +170,14 @@
     ;(begin (display env) (newline)
     (cond [(null? explist) (void)]
 	  [(null? (cdr explist))
-	   (eval-expression (car explist) cont env)]
+	   (begin ;(display "blahblah")
+	   (eval-expression (car explist) cont env))]
 	  [else
 	   (if (and (pair? (car explist)) (eqv? 'define-exp (caar explist))) 
-	     (eval-begin-list (cdr explist) cont (eval-expression (car explist) env))
-	     (begin (eval-expression (car explist) cont env) (eval-begin-list (cdr explist) cont env)))])));)
+	       (eval-expression (car explist) (begin-list-env-ext-cont (cdr explist) cont) env)
+					;(eval-begin-list (cdr explist) cont (eval-expression (car explist) env))
+	       (eval-expression (car explist) (begin-list-cont (cdr explist) env cont) env))])))
+	     ;(begin (eval-expression (car explist) cont env) (eval-begin-list (cdr explist) cont env)))])));)
 
 (define make-closure
   (lambda (id body env)
@@ -180,7 +189,9 @@
   [closure-record
    (id lambda-parameter-list?)
    (body (list-of expression?))
-   (env environment?)])
+   (env environment?)]
+  [acontinuation
+   (cont continuation?)])
 
 (define apply-proc
   (lambda (procedure args cont)
@@ -190,8 +201,17 @@
 			       ;(display body)])
 			       (eval-begin-list body cont (extend-env id args env))]
 	       [primitive (id)
-			  (apply-primitive-proc id args cont)])
+			  (apply-primitive-proc id args cont)]
+	       [acontinuation (cont)
+			      (apply-cont cont (car args))])
 	(procedure args))))
+
+(define map-eval
+  (lambda (procedure expressions cont)
+    (if (null? expressions)
+	(apply-cont cont '())
+	(apply-proc procedure (list (car expressions)) (map-eval-cont procedure (cdr expressions) cont)))))
+	;(cons (apply-proc procedure (car expressions)) (map-eval procedure (cdr expressions)))))
 
 (define apply-primitive-proc
   (lambda (id args cont)
@@ -201,9 +221,11 @@
       ;[(car) (apply car args)]
       ;[(cdr) (cdar args)]
       ;[(add1) (apply add1 args)]
-      [(map) (map (lambda (x) (apply-proc (car args) (list x) (empty-env))) (cadr args))]
+      [(map) (map-eval (car args) (cadr args) cont)]
+      ;[(map) (map (lambda (x) (apply-proc (car args) (list x) cont)) (cadr args))]
       [(apply) (apply (eval (cadar args)) (cadr args))]
       [(procedure?) (or (proc? (car args)))]
+      [(break) (apply-cont (halt-cont) args)]
 			       
 			 
       [else 
@@ -218,7 +240,7 @@
       list? pair? procedure? vector->list vector make-vector
       vector-ref vector? number? symbol? set-car! set-cdr!
       vector-set! caar cadr cdar cddr caaar caadr cadar max
-      caddr cdaar cdadr cddar cdddr eqv? set-car! map apply assq assv append))
+      caddr cdaar cdadr cddar cdddr eqv? set-car! map apply assq assv append break))
 
 (define make-init-env
   (lambda ()

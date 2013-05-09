@@ -64,6 +64,8 @@
   (define-exp
     (id symbol?)
     (exp expression?))
+  (call/cc-exp
+   (receiver expression?))
 )
 
 (define lambda-parameter-list?
@@ -150,6 +152,8 @@
 		 [(eq? (car datum) 'define)
 		  (define-exp (cadr datum)
 		              (parse-expression (caddr datum)))]
+		 [(eq? (car datum) 'call/cc)
+		  (call/cc-exp (parse-expression (cadr datum)))]
 		 [else (app-exp (parse-explist datum))])]
 	  [(scheme-value? datum) (lit-exp datum)]
 	  [else (eopl:error 'parse-expression
