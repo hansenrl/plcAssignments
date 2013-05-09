@@ -4,52 +4,68 @@
   (lambda (v)
     #t))
 
-(define var-exp 
-  (lambda (id) 
-    (list 'var-exp id))) 
-(define lit-exp 
-  (lambda (val)
-    (list 'lit-exp val)))
- (define lambda-exp
-   (lambda (parameters body)
-     (list 'lambda-exp parameters body)))
- (define app-exp
-   (lambda (operator operand)
-     (list 'app-exp operator operand)))
- (define if-exp
-   (lambda (condition if-true)
-     (list 'if-exp condition if-true)))
- (define ifelse-exp
-   (lambda (condition if-true if-false)
-     (list 'ifelse-exp condition if-true if-false)))
- (define letrec-exp
-   (lambda (defs body) (list 'letrec-exp defs body)))
- (define namedletrec-exp
-   (lambda (id defs body)
-     (list 'namedletrec-exp id defs body)))
- (define namedlet-exp
-   (lambda (id defs body) (list 'namedlet-exp id defs body)))
- (define let-exp
-   (lambda (defs body) (list 'let-exp defs body)))
- (define namedlet*-exp
-   (lambda (id defs body) (list 'namedlet*-exp id defs body)))
- (define let*-exp
-   (lambda (defs body) (list 'let*-exp defs body)))
- (define set-exp (lambda (id val) (list 'set-exp id val)))
- (define begin-exp (lambda (body) (list 'begin-exp body)))
- (define cond-exp
-   (lambda (conditions bodies)
-     (list 'cond-exp conditions bodies)))
- (define and-exp (lambda (exps) (list 'and-exp exps)))
- (define or-exp (lambda (exps) (list 'or-exp exps)))
- (define while-exp
-   (lambda (test-exp bodies)
-     (list 'while-exp test-exp bodies)))
- (define case-exp
-   (lambda (key conditions bodies)
-     (list 'case-exp key conditions bodies)))
- (define define-exp
-   (lambda (id exp) (list 'define-exp id exp)))
+(define-datatype expression expression?
+  (var-exp
+   (id symbol?))
+  (lit-exp
+   (val scheme-value?))
+  (lambda-exp
+   (parameters lambda-parameter-list?)
+   (body (list-of expression?)))
+  (app-exp
+   (operator expression?)
+   (operand (list-of expression?)))
+  (if-exp
+   (condition expression?)
+   (if-true expression?))
+  (ifelse-exp
+   (condition expression?)
+   (if-true expression?)
+   (if-false expression?))
+  (letrec-exp
+   (defs (list-of definition?))
+   (body (list-of expression?)))
+  (namedletrec-exp
+   (id symbol?)
+   (defs definition-list?)
+   (body expression-list?))
+  (namedlet-exp
+   (id symbol?)
+   (defs (list-of definition?))
+   (body (list-of expression?)))
+  (let-exp
+   (defs (list-of definition?))
+   (body (list-of expression?)))
+  (namedlet*-exp
+   (id symbol?)
+   (defs definition-list?)
+   (body expression-list?))
+  (let*-exp
+   (defs (list-of definition?))
+   (body (list-of expression?)))
+  (set-exp
+   (id symbol?)
+   (val expression?))
+  (begin-exp
+   (body (list-of expression?)))
+  (cond-exp
+   (conditions (list-of expression?))
+   (bodies (list-of expression?)))
+  (and-exp
+   (exps (list-of expression?)))
+  (or-exp
+   (exps (list-of expression?)))
+  (while-exp
+   (test-exp expression?)
+   (bodies (list-of expression?)))
+  (case-exp
+   (key expression?)
+   (conditions (list-of (list-of expression?)))
+   (bodies (list-of expression?)))
+  (define-exp
+    (id symbol?)
+    (exp expression?))
+)
 
 (define lambda-parameter-list?
   (lambda (ls)
@@ -223,3 +239,78 @@
 				    accu))]
 	  [else
 	   (list accu (parse-explist datum))])))
+
+
+(define unparse-expression
+  (lambda (exp)
+    (cases expression exp
+	   [var-exp (id) id]
+	   [lit-exp (val) val]
+	   [lambda-exp (parameters body)
+		       (cons 'lambda
+			     (cons (unparse-symbol-list parameters)
+				   (unparse-listofexpressions body)))]
+	   [app-exp (operator operand)
+		    (cons (unparse-expression operator)
+			  (unparse-listofexpressions operand))]
+	   [if-exp (condition if-true)
+		   (list 'if
+			 (unparse-expression condition)
+			 (unparse-expression if-true))]
+	   [ifelse-exp (condition if-true if-false)
+		       (list 'if
+			     (unparse-expression condition)
+			     (unparse-expression if-true)
+			     (unparse-expression if-false))]
+	   [letrec-exp (defs body)
+		       (unparse-let 'letrec defs body)]
+	   [namedletrec-exp (id defs body) 
+			    (unparse-namedlet 'letrec id defs body)]
+	   [let-exp (defs body)
+		    (unparse-let 'let defs body)]
+	   [namedlet-exp (id defs body) 
+			 (unparse-namedlet 'let id defs body)]
+	   [let*-exp (defs body)
+		    (unparse-let 'let* defs body)]
+	   [namedlet*-exp (id defs body) 
+			 (unparse-namedlet 'let* id defs body)]
+	   [set-exp (body)
+		    (cons 'set!
+			  (unparse-definition body))])))
+
+(define unparse-symbol-list
+  (lambda (symblist)
+    (cases symbol-list symblist
+	   [null-symblist (symb) symb]
+	   [base-symblist (symb) symb]
+	   [mult-symblist (symb symblist)
+			  (cons symb
+				(unparse-symbol-list symblist))])))
+
+(define unparse-definition-list
+  (lambda (deflist)
+    (cases definition-list deflist
+	   [null-deflist (def) def]
+	   [mult-deflist (def deflist)
+			 (cons (unparse-definition def)
+			       (unparse-definition-list deflist))])))
+
+(define unparse-definition
+  (lambda (datum)
+    (cases definition datum
+	   [def (id exp)
+		(list id
+		      (unparse-expression exp))])))
+
+(define unparse-let
+  (lambda (typeoflet defs body)
+    (cons typeoflet
+	  (cons (unparse-definition-list defs)
+		(unparse-listofexpressions body)))))
+
+(define unparse-namedlet
+  (lambda (typeoflet id defs body)
+    (cons typeoflet
+	  (cons id
+		(cons (unparse-definition-list defs)
+		      (unparse-listofexpressions body))))))
