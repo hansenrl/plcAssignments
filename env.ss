@@ -58,7 +58,7 @@
   (lambda (sym)
     (let ([result (assv sym global-env)])
       (if (not result)
-	  (eopl:error 'apply-global-env "No binding for ~s" sym)
+	  (display (list "No binding for " sym))
 	  (cdr result)))))
 #|
 (define exists-in-global-env?
@@ -93,14 +93,14 @@
   (lambda (sym val)
     (let ([result (assv sym global-env)])
       (if (not result)
-	  (eopl:error 'change-global-env "No existing binding for ~s" sym)
+	  (display (list 'change-global-env "No existing binding for ~s" sym))
 	  (set-cdr! result val)))))
     
     
 (define change-env
   (lambda (env sym val)
     (if (null? env)
-	(change-global-env sym val) ;(eopl:error 'apply-env "No binding for ~s" sym)
+	(change-global-env sym val)
 	(let ([syms (caar env)]
 	      [vals (cdar env)]
 	      [env (cdr env)])

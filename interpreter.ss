@@ -84,11 +84,15 @@
 		    '())
 		  (begin (eval-one-exp x) 
 			 (f (read p)))))))]
-       [else (eopl:error 'eval-expression
-			 "incorrect expression type ~s" exp)])))
+       [else (display (list 'eval-expression
+			    "incorrect expression type ~s" exp))])))
 
 (define expand-syntax
   (lambda (exp)
+    #|(display exp)
+    (newline)
+    (display (eqv? (car exp) 'case-exp))
+    (newline)|#
     (case (car exp)
       [(let-exp)
        (let ([defs (cadr exp)]
@@ -157,17 +161,17 @@
        (let ([key (cadr exp)]
 	     [conditions (caddr exp)]
 	     [bodies (cadddr exp)])
-	 (if (equal? (car conditions) '((var-exp else)))
+	 (if (equal? (car conditions) '((lit-exp else)))
 	     (expand-syntax (car bodies))
 	     (if (null? (cdr conditions))
 		 (expand-syntax (if-exp (or-exp (map (lambda (exp)
-						       (app-exp (var-exp 'eqv?)
+						       (app-exp (var-exp 'eq?)
 								(list key
 								      exp)))
 						     (car conditions)))
 					(car bodies)))
 		 (expand-syntax (ifelse-exp (or-exp (map (lambda (exp)
-							   (app-exp (var-exp 'eqv?)
+							   (app-exp (var-exp 'eq?)
 								    (list key
 									  exp)))
 							 (car conditions)))
@@ -249,15 +253,61 @@
 (define apply-primitive-proc
   (lambda (id args)
     (case id
-      [(+) (apply + args)]
-      [(-) (apply - args)]
-      [(car) (apply car args)]
-      [(cdr) (cdar args)]
-      [(add1) (apply add1 args)]
+      ((+) (apply + args)) ((-) (apply - args))
+      ((*) (apply * args)) ((/) (apply / args))
+      ((add1) (apply add1 args)) ((sub1) (apply sub1 args))
+      ((zero?) (apply zero? args)) ((not) (apply not args))
+      ((=) (apply = args)) ((<) (apply < args))
+      ((>) (apply > args)) ((<=) (apply <= args))
+      ((>=) (apply >= args)) ((cons) (apply cons args))
+      ((car) (apply car args)) ((cdr) (apply cdr args))
+      ((list) (apply list args)) ((null?) (apply null? args))
+      ((eq?) (apply eq? args)) ((equal?) (apply equal? args))
+      ((atom?) (apply atom? args)) ((length) (apply length args))
+      ((list->vector) (apply list->vector args))
+      ((list?) (apply list? args)) ((pair?) (apply pair? args))
+      ((procedure?) (apply procedure? args))
+      ((vector->list) (apply vector->list args))
+      ((vector) (apply vector args))
+      ((make-vector) (apply make-vector args))
+      ((vector-ref) (apply vector-ref args))
+      ((vector?) (apply vector? args))
+      ((number?) (apply number? args))
+      ((symbol?) (apply symbol? args))
+      ((set-car!) (apply set-car! args))
+      ((set-cdr!) (apply set-cdr! args))
+      ((vector-set!) (apply vector-set! args))
+      ((caar) (apply caar args)) ((cadr) (apply cadr args))
+      ((cdar) (apply cdar args)) ((cddr) (apply cddr args))
+      ((caaar) (apply caaar args)) ((caadr) (apply caadr args))
+      ((cadar) (apply cadar args)) ((max) (apply max args))
+      ((caddr) (apply caddr args)) ((cdaar) (apply cdaar args))
+      ((cdadr) (apply cdadr args)) ((cddar) (apply cddar args))
+      ((cdddr) (apply cdddr args)) ((caaaar) (apply caaaar args))
+      ((caaadr) (apply caaadr args))
+      ((caadar) (apply caadar args))
+      ((caaddr) (apply caaddr args))
+      ((cadaar) (apply cadaar args))
+      ((cadadr) (apply cadadr args))
+      ((caddar) (apply caddar args))
+      ((cadddr) (apply cadddr args))
+      ((cdaaar) (apply cdaaar args))
+      ((cdaadr) (apply cdaadr args))
+      ((cdadar) (apply cdadar args))
+      ((cdaddr) (apply cdaddr args))
+      ((cddaar) (apply cddaar args))
+      ((cddadr) (apply cddadr args))
+      ((cdddar) (apply cdddar args))
+      ((cddddr) (apply cddddr args)) ((eqv?) (apply eqv? args))
+      ((set-car!) (apply set-car! args))
+      ((assq) (apply assq args))
+      ((assv) (apply assv args)) ((append) (apply append args))
+      ((display) (apply display args))
+      ((newline) (apply newline args)) ((eval) (apply eval args))
       [(map) (map (lambda (x) (apply-proc (car args) (list x) (empty-env))) (cadr args))]
       [(apply) (apply (eval (cadar args)) (cadr args))]
       [else 
-       (apply (eval id) args)])))
+       (display (list 'error: primitive not implemented id))])))
       ;[else
        ;(eopl:error 'apply-primitive-proc
 	;	   "primitive not defined ~s" id)])))
@@ -268,7 +318,10 @@
       list? pair? procedure? vector->list vector make-vector
       vector-ref vector? number? symbol? set-car! set-cdr!
       vector-set! caar cadr cdar cddr caaar caadr cadar max
-      caddr cdaar cdadr cddar cdddr eqv? set-car! map apply assq assv append))
+      caddr cdaar cdadr cddar cdddr caaaar caaadr caadar caaddr cadaar cadadr caddar
+      cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
+      eqv? set-car! map apply assq assv append
+      display newline eval))
 
 (define make-init-env
   (lambda ()

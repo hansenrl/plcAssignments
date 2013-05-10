@@ -32,18 +32,19 @@
 ;<application> ::= (<expression> <expression>*) 
  
 
-;(load "env.ss")
-;(load "interpreter.ss")
-;(load "parser.ss")
+(load "env.ss")
+(load "interpreter.ss")
+(load "parser.ss")
 
-(define (rep)
-  (begin
-    (display "--> ")
-    (let ([in (read)])
-      (if (not (equal? in '(exit)))
-	  (begin (write (convertstuff (eval-one-exp in)))
-		 (newline)
-		 (rep))))))
+(define rep
+  (lambda ()
+    (begin
+      (display "--> ")
+      (let ([in (read)])
+	(if (not (equal? in '(exit)))
+	    (begin (write (convertstuff (eval-one-exp in)))
+		   (newline)
+		   (rep)))))))
      
 (define convertstuff
   (lambda (stuff)

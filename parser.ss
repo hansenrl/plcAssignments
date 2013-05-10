@@ -129,8 +129,8 @@
 		  (case-exp (parse-expression (cadr datum))
 			    (map (lambda (x) 
 				   (if (pair? x)
-				       (map parse-expression x)
-				       (list (parse-expression x))))
+				       (map lit-exp x)
+				       (list (lit-exp x))))
 				 (map car (cddr datum)))
 			    (map parse-expression (map cadr (cddr datum))))]
 		 [(eq? (car datum) 'define)
@@ -141,11 +141,11 @@
 		 [else (app-exp (parse-expression (car datum))
 				(if (list? (cdr datum))
 				    (parse-explist (cdr datum))
-				    (eopl:error 'parse-expression
-						"app-exp: not proper arg list: ~s" datum)))])]
+				    (display (list 'parse-expression
+						   "app-exp: not proper arg list: ~s" datum))))])]
 	  [(scheme-value? datum) (lit-exp datum)]
-	  [else (eopl:error 'parse-expression
-			    "Invalid concrete syntac ~s" datum)])))
+	  [else (display (list 'parse-expression
+			       "Invalid concrete syntac ~s" datum))])))
 
 (define parse-definition-list
   (lambda (datum)
@@ -154,8 +154,8 @@
 	   (cons (parse-definition (car datum))
 		 (parse-definition-list (cdr datum)))]
 	  [else
-	   (eopl:error 'parse-expression
-		       "Definition list: invalid definition: ~s" datum)])))
+	   (display (list 'parse-expression
+			  "Definition list: invalid definition: ~s" datum))])))
 
 (define parse-definition
   (lambda (datum)
@@ -165,8 +165,8 @@
 	   (list (car datum)
 		 (parse-expression (cadr datum)))]
 	  [else
-	   (eopl:error 'parse-expression
-		       "Definition: invalid definition: ~s" datum)])))
+	   (display (list 'parse-expression
+			  "Definition: invalid definition: ~s" datum))])))
 
 (define parse-lambda-parameters
   (lambda (datum)
@@ -176,24 +176,24 @@
 		(symbol? (car datum)))
 	   (cons (car datum) (parse-lambda-parameters (cdr datum)))]
 	  [else
-	   (eopl:error 'parse-expression
-		       "lambda parameter: must be symbol: ~s" datum)])))
+	   (display (list 'parse-expression
+			  "lambda parameter: must be symbol: ~s" datum))])))
 
 (define parse-namedlet
   (lambda (typeofexp datum)
     (typeofexp (cadr datum)
 	       (parse-definition-list (caddr datum))
 	       (if (null? (cdddr datum))
-		   (eopl:error 'parse-expression
-			       "named let expression: empty body: ~s" datum)
+		   (display (list 'parse-expression
+				  "named let expression: empty body: ~s" datum))
 		   (parse-explist (cdddr datum))))))
 
 (define parse-let 
   (lambda (typeofexp datum)
     (typeofexp (parse-definition-list (cadr datum))
 	       (if (null? (cddr datum))
-		   (eopl:error 'parse-expression
-			       "let expression: empty body: ~s" datum)
+		   (display (list 'parse-expression
+				  "let expression: empty body: ~s" datum))
 		   (parse-explist (cddr datum))))))
 
 (define parse-explist
