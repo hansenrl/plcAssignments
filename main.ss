@@ -32,12 +32,9 @@
 ;<application> ::= (<expression> <expression>*) 
  
 
-(load "env.ss")
-(load "interpreter.ss")
-(load "parser.ss")
-(load "syntax-defines.ss")
-
-(define (rl) (load "main.ss"))
+;(load "env.ss")
+;(load "interpreter.ss")
+;(load "parser.ss")
 
 (define (rep)
   (begin
@@ -54,5 +51,5 @@
 	(if (eq? (car stuff) 'closure-record)
 	    '<interpreter-procedure>
 	    (cons (convertstuff (car stuff))
-		  (converstuff (cdr stuff))))
+		  (convertstuff (cdr stuff))))
 	stuff)))

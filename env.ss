@@ -1,4 +1,3 @@
-(load "chez-init.ss")
 
 ;;; Rib cage implementation using:
 ;;; A list of symbols and
@@ -33,14 +32,18 @@
 	   (let* ([vec (list->vector vals)]
 		  [new-env (cons (cons syms vec) env)])
 	     (for-each (lambda (item pos)
-			 (begin #|(display "**new-env ") (display new-env) (newline) (display "**item ") (display item) (display "\nprocedure? ") (display (proc? item)) (display "\n\n")|# (if (proc? item)
+			 (begin(if (and (list? item) (or (eqv? (car item) 'closure-record) (eqv? (car item) 'primitive)))
 			     (vector-set! vec
 					  pos
-					  (cases proc item
-						 [closure-record (ids bodies toss-env)
-							  (closure-record ids bodies new-env)]
-						 [primitive (id)
-							    item])))))
+					  (case (car item)
+						 [(closure-record) 
+						  (let ([ids (cadr item)]
+							[bodies (caddr item)]
+							[toss-env (cadddr item)])
+						    (closure-record ids bodies new-env))]
+						 [(primitive)
+						  (let ([id (car item)])
+						    item)])))))
 		       vals
 		       (make-indices (- (length vals) 1) '()))
 	     new-env)])))

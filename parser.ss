@@ -1,5 +1,3 @@
-(load "chez-init.ss")
-
 (define scheme-value?
   (lambda (v)
     #t))
@@ -50,6 +48,9 @@
      (list 'case-exp key conditions bodies)))
  (define define-exp
    (lambda (id exp) (list 'define-exp id exp)))
+(define load-exp
+  (lambda (filename)
+    (list 'load-exp filename)))
 
 (define lambda-parameter-list?
   (lambda (ls)
@@ -135,6 +136,8 @@
 		 [(eq? (car datum) 'define)
 		  (define-exp (cadr datum)
 		              (parse-expression (caddr datum)))]
+		 [(eq? (car datum) 'load)
+		  (load-exp (cadr datum))]
 		 [else (app-exp (parse-expression (car datum))
 				(if (list? (cdr datum))
 				    (parse-explist (cdr datum))
