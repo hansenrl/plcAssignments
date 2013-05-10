@@ -42,7 +42,7 @@
       (display "--> ")
       (let ([in (read)])
 	(if (not (equal? in '(exit)))
-	    (begin (write (convertstuff (eval-one-exp in)))
+	    (begin (write  (eval-one-exp in))
 		   (newline)
 		   (rep)))))))
      

@@ -31,21 +31,23 @@
 	  [else
 	   (let* ([vec (list->vector vals)]
 		  [new-env (cons (cons syms vec) env)])
-	     (for-each (lambda (item pos)
-			 (begin(if (and (list? item) (or (eqv? (car item) 'closure-record) (eqv? (car item) 'primitive)))
-			     (vector-set! vec
-					  pos
-					  (case (car item)
-						 [(closure-record) 
-						  (let ([ids (cadr item)]
-							[bodies (caddr item)]
-							[toss-env (cadddr item)])
-						    (closure-record ids bodies new-env))]
-						 [(primitive)
-						  (let ([id (car item)])
-						    item)])))))
-		       vals
-		       (make-indices (- (length vals) 1) '()))
+	     (letrec ([helper (lambda (ls1 ls2)
+				(if (not (null? ls1))
+				    (let ([item (car ls1)][pos (car ls2)])
+				      (begin(if (and (list? item) (or (eqv? (car item) 'closure-record) (eqv? (car item) 'primitive)))
+						(vector-set! vec
+							     pos
+							     (case (car item)
+							       [(closure-record) 
+								(let ([ids (cadr item)]
+								      [bodies (caddr item)]
+								      [toss-env (cadddr item)])
+								  (closure-record ids bodies new-env))]
+							       [(primitive)
+								(let ([id (car item)])
+								  item)]))))
+				      (helper (cdr ls1) (cdr ls2)))))])
+		       (helper vals (make-indices (- (length vals) 1) '())))
 	     new-env)])))
 
 (define make-indices

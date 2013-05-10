@@ -196,6 +196,9 @@
 	 (letrec-exp (list (cons id 
 				 (list (lambda-exp (map car defs) (map expand-syntax bodies))))) 
 		     (list (app-exp (var-exp id) (map expand-syntax (map cadr defs))))))]
+      [(begin-exp)
+       (let ([bodies (cadr exp)])
+	 (list 'begin-exp (map expand-syntax bodies)))]
       [else exp])))
 
 (define while-eval
@@ -304,10 +307,17 @@
       ((assv) (apply assv args)) ((append) (apply append args))
       ((display) (apply display args))
       ((newline) (apply newline args)) ((eval) (apply eval args))
+      ((read) (apply read args))
+      ((write) (apply write args))
+      ((eof-object?) (apply eof-object? args))
+      ((close-port) (apply close-port args))
+      ((open-input-file) (apply open-input-file args))
       [(map) (map (lambda (x) (apply-proc (car args) (list x) (empty-env))) (cadr args))]
-      [(apply) (apply (eval (cadar args)) (cadr args))]
+      [(apply) (if (pair? (car args))
+		   (apply (eval (cadar args)) (cadr args))
+		   (apply (car args) (cadr args)))]
       [else 
-       (display (list 'error: primitive not implemented id))])))
+       (display (list "error: primitive not implemented" id))])))
       ;[else
        ;(eopl:error 'apply-primitive-proc
 	;	   "primitive not defined ~s" id)])))
@@ -321,7 +331,7 @@
       caddr cdaar cdadr cddar cdddr caaaar caaadr caadar caaddr cadaar cadadr caddar
       cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
       eqv? set-car! map apply assq assv append
-      display newline eval))
+      display newline eval read write eof-object? close-port open-input-file))
 
 (define make-init-env
   (lambda ()

@@ -1,4 +1,4 @@
-(set! totalScore 0)
+(define totalScore 0)
 
 (define (test-all)
 	(if (begin (set! totalScore 0) (and
