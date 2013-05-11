@@ -17,7 +17,17 @@
    (true-exp expression?)
    (false-exp expression?)
    (cont continuation?)
-   (env list?)))
+   (env list?))
+  (while-cont
+   (test expression?)
+   (bodies (list-of expression?))
+   (cont continuation?)
+   (env environment?))
+  (begin-while-cont
+   (test expression?)
+   (bodies (list-of expression?))
+   (cont continuation?)
+   (env environment?)))
 
 (define scheme-value? (lambda (x) #t))
 
@@ -39,5 +49,14 @@
 	   [if-else-cont (if-true-exp if-false-exp next-cont env)
 		    (if val
 			(eval-expression if-true-exp next-cont env)
-			(eval-expression if-false-exp next-cont env))])))
-	    
+			(eval-expression if-false-exp next-cont env))]
+	   [while-cont (test bodies cont env)
+		       (if val
+			   (eval-expression (car bodies) 
+					    (begin-while-cont test bodies cont env)
+					    env))]
+	   [begin-while-cont (test bodies cont env)
+			     (cond [(null? bodies) (eval-expression test (while-cont test bodies cont env) env)]
+				   [else (eval-expression (car bodies) 
+							  (begin-while-cont test (cdr bodies) cont env)
+							  env)])])))

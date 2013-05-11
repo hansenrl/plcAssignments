@@ -2,7 +2,7 @@
   (lambda (form)
     (cases expression form
 	   [define-exp (sym val)
-	     (extend-global-env sym (eval-expression val (empty-env)))]
+	     (extend-global-env sym (eval-expression val (halt-cont) (empty-env)))]
 	   [else (eval-expression form (halt-cont) (empty-env))])))
 
 (define eval-one-exp
@@ -53,9 +53,10 @@
 				  sym
 				  the-val))]
 	   [begin-exp (body)
-		      (eval-begin-list body env)]
+		      (eval-begin-list body cont env)]
 	   [while-exp (test-exp bodies)
-		      (while-eval test-exp bodies env)]
+		      (eval-expression test-exp (while-cont test-exp bodies cont env) env)]
+		      ;(while-eval test-exp bodies env)]
 	   [define-exp (sym val)
 	     (if (exists-in-env? env sym)
 		 (change-env env sym val)
