@@ -66,15 +66,12 @@
 	 (symbol? (car def))
 	 (expression? (cadr def)))))
 
-(define attoplevelflag 1)
+(define distfromtoplevel 0)
 
 (define parse-expression
   (lambda (datum)
-    (if attoplevelflag 
-	(if (= attoplevelflag 0)
-	    (set! attoplevelflag #f)
-	    (set! attoplevelflag (- attoplevelflag 1))))
-    (cond [(symbol? datum) (var-exp datum)]
+    (set! distfromtoplevel (+ 1 distfromtoplevel))
+    (let ([temp (cond [(symbol? datum) (var-exp datum)]
 	  [(number? datum) (lit-exp datum)]
 	  [(pair? datum)
 	   (cond [(eq? (car datum) 'lambda)
@@ -113,7 +110,7 @@
 		 [(eq? (car datum) 'quote)
 		  (lit-exp (cadr datum))]
 		 [(eq? (car datum) 'begin)
-		  (if attoplevelflag
+		  (if (= distfromtoplevel 1)
 		      (begin-exp (parse-explistkeepdefine (cdr datum)))
 		      (begin-exp (parse-explist (cdr datum))))]
 		 [(eq? (car datum) 'cond)
@@ -145,7 +142,9 @@
 						   "app-exp: not proper arg list: ~s" datum))))])]
 	  [(scheme-value? datum) (lit-exp datum)]
 	  [else (display (list 'parse-expression
-			       "Invalid concrete syntac ~s" datum))])))
+			       "Invalid concrete syntac ~s" datum))])])
+      (set! distfromtoplevel (- distfromtoplevel 1))
+      temp)))
 
 (define parse-definition-list
   (lambda (datum)
@@ -200,7 +199,7 @@
   (lambda (datum)
     (cond [(null? datum)
 	   '()]
-	  [(and (not attoplevelflag) (pair? (car datum))(eq? (caar datum) 'define))
+	  [(and (pair? (car datum))(eq? (caar datum) 'define))
 	   (let ([defbodylist (define-body-split datum '())])
 	     (list (letrec-exp (car defbodylist) (cadr defbodylist))))]
 	  [else

@@ -73,7 +73,7 @@
 	       [val (caddr exp)])
 	   (if (exists-in-env? env sym)
 	       (change-env env sym val)
-	       (extend-env sym (eval-expression val env) env)))]
+	       (extend-global-env sym (eval-expression val env))))]
        [(load-exp)
 	(let ([filename (cadr exp)])
 	  (let ([p (open-input-file filename)])
@@ -221,9 +221,9 @@
 	  [(null? (cdr explist))
 	   (eval-expression (car explist) env)]
 	  [else
-	   (if (and (pair? (car explist)) (eqv? 'define-exp (caar explist))) 
-	     (eval-begin-list (cdr explist) (eval-expression (car explist) env))
-	     (begin (eval-expression (car explist) env) (eval-begin-list (cdr explist) env)))])));)
+	   ;(if (and (pair? (car explist)) (eqv? 'define-exp (caar explist))) 
+	   ;  (eval-begin-list (cdr explist) (eval-expression (car explist) env))
+	     (begin (eval-expression (car explist) env) (eval-begin-list (cdr explist) env))])));)
 
 (define make-closure
   (lambda (id body env)
